@@ -1,7 +1,7 @@
 import os
 import random
 import sys
-
+import math # ベクトル計算用にmathライブラリをインポート
 import pygame as pg
 
 
@@ -22,6 +22,36 @@ def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
     if rct.top < 0 or HEIGHT < rct.bottom:
         tate = False
     return yoko, tate
+
+
+def calc_orientation(org: pg.Rect, dst: pg.Rect, current_xy: tuple[float, float]) -> tuple[float, float]: #課題4：ベクトル計算の定義
+    """
+    org（爆弾）からdst（こうかとん）への方向ベクトルを計算する。
+    ただし、距離が300未満の場合は現在の速度ベクトルを維持する。
+
+    Args:
+        org (pg.Rect): 爆弾のRectオブジェクト
+        dst (pg.Rect): こうかとんのRectオブジェクト
+        current_xy (tuple[float, float]): 現在の速度ベクトル
+
+    Returns:
+        tuple[float, float]: 更新された速度ベクトル
+    """
+    # orgからdstへのベクトル（座標差）
+    dx = dst.centerx - org.centerx
+    dy = dst.centery - org.centery
+
+    # ノルム（ベクトルの長さ）を計算
+    norm = math.sqrt(dx**2 + dy**2)
+
+    # 距離が300未満なら現在の速度を維持
+    if norm < 300:
+        return current_xy
+
+    # 正規化して速度ベクトルを計算
+    scale = math.sqrt(50) / norm  # ノルムを√50にするスケール
+    return dx * scale, dy * scale
+
 
 def kokaton_rotate(kk_img: pg.Surface):  # 課題3:飛ぶ方向に従ってこうかとん画像を切り替える
     """
@@ -125,6 +155,9 @@ def main():
             kk_rct.move_ip(-sum_mv[0], -sum_mv[1])
         screen.blit(kk_imgs[(sum_mv[0], sum_mv[1])], kk_rct)  # こうかとん描画
 
+        # 課題4：爆弾の速度ベクトルを更新
+        vx, vy = calc_orientation(bb_rct, kk_rct, (vx, vy))
+
         # 爆弾の動き
         bb_rct.move_ip(vx, vy)
         yoko, tate = check_bound(bb_rct)
@@ -132,6 +165,7 @@ def main():
             vx *= -1
         if not tate:  # 縦にはみ出ている
             vy *= -1
+
 
         # 拡大された爆弾の描画
         screen.blit(bb_imgs[level], bb_rct)
