@@ -4,7 +4,6 @@ import sys
 import math # ベクトル計算用にmathライブラリをインポート
 import pygame as pg
 
-
 WIDTH, HEIGHT = 1100,650
 DELTA = {
     pg.K_UP: (0, -5),
@@ -14,7 +13,6 @@ DELTA = {
 }
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-
 def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
     yoko, tate = True, True
     if rct.left < 0 or WIDTH < rct.right:
@@ -22,7 +20,6 @@ def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
     if rct.top < 0 or HEIGHT < rct.bottom:
         tate = False
     return yoko, tate
-
 
 def calc_orientation(org: pg.Rect, dst: pg.Rect, current_xy: tuple[float, float]) -> tuple[float, float]: #課題4：ベクトル計算の定義
     """
@@ -51,7 +48,6 @@ def calc_orientation(org: pg.Rect, dst: pg.Rect, current_xy: tuple[float, float]
     # 正規化して速度ベクトルを計算
     scale = math.sqrt(50) / norm  # ノルムを√50にするスケール
     return dx * scale, dy * scale
-
 
 def kokaton_rotate(kk_img: pg.Surface):  # 課題3:飛ぶ方向に従ってこうかとん画像を切り替える
     """
@@ -117,7 +113,6 @@ def check_shield_collision(kk_rct: pg.Rect, shield_rct: pg.Rect) -> bool:#課題
     こうかとんがシールドアイテムに接触したかを判定する。
     """
     return kk_rct.colliderect(shield_rct)
-
 
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
@@ -214,7 +209,6 @@ def main():
         pg.display.update()
         tmr += 1
         clock.tick(50)
-
 
 
 if __name__ == "__main__":
