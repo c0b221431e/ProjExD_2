@@ -39,11 +39,39 @@ def kokaton_rotate(kk_img: pg.Surface):  # 課題3:飛ぶ方向に従ってこ�
             flip = False  # 左右反転
         kk = kk_img
         kk = pg.transform.flip(kk, flip, False)
-        kk = pg.transform.rotozoom(kk, angle, 2.0)
+        kk = pg.transform.rotozoom(kk, angle, 0.9)
         kk_imgs[k] = kk  # key:移動量タプル value:手を加えたこうかとんsurface
         angle += 45  #角度を45度回す
-    kk_imgs[kk_mv[8]] = pg.transform.rotozoom(kk_img, 0, 2.0)
+    kk_imgs[kk_mv[8]] = pg.transform.rotozoom(kk_img, 0, 0.9)
     return kk_imgs
+
+def game_over(screen: pg.Surface) -> None: #課題１：ゲームオーバー画面の生成
+    """
+    ゲームオーバー時に画面をブラックアウトし、
+    泣いているこうかとん画像と「Game Over」の文字列を表示する。
+    """
+    # 半透明の黒い画面を描画
+    overlay = pg.Surface((WIDTH, HEIGHT))
+    overlay.set_alpha(128)  # 半透明
+    overlay.fill((0, 0, 0))  # 黒
+    screen.blit(overlay, (0, 0))
+
+    # 「Game Over」のテキストを描画
+    font = pg.font.Font(None, 100)
+    text = font.render("Game Over", True, (255, 255, 255))
+    text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+    screen.blit(text, text_rect)
+
+    # 泣いているこうかとん画像を「Game Over」の横に配置
+    cry_kokaton = pg.transform.rotozoom(pg.image.load("fig/8.png"), 0, 1.0)
+    cry_kokaton_left_rect = cry_kokaton.get_rect(midright=(text_rect.left - 20, text_rect.centery))
+    cry_kokaton_right_rect = cry_kokaton.get_rect(midleft=(text_rect.right + 20, text_rect.centery))
+    screen.blit(cry_kokaton, cry_kokaton_left_rect)
+    screen.blit(cry_kokaton, cry_kokaton_right_rect)
+
+    # 画面更新と5秒間の表示
+    pg.display.update()
+    pg.time.wait(5000)  # 5秒間停止
 
 
 def main():
@@ -56,7 +84,7 @@ def main():
     kk_rct.center = 300, 200
 
     # 課題2:爆弾の画像を段階ごとに作成（10段階）
-    bb_accs = [1.0 + 0.1 * i for i in range(10)]  # 加速リスト
+    bb_accs = [1.0 + 0.5 * i for i in range(10)]  # 加速リスト
     bb_imgs = []  # サイズ段階ごとの爆弾画像リスト
     for r in range(1, 11):  # 爆弾サイズを10段階に分ける
         img = pg.Surface((20 * r, 20 * r), pg.SRCALPHA)  # SRCALPHAで透明背景
@@ -75,7 +103,7 @@ def main():
             if event.type == pg.QUIT: 
                 return
         if kk_rct.colliderect(bb_rct):
-            print("ゲームオーバー")
+            game_over(screen)
             return
 
         # 課題2:爆弾の加速と拡大
