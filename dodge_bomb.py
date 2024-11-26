@@ -102,6 +102,21 @@ def game_over(screen: pg.Surface) -> None: #課題１：ゲームオーバー画
     # 画面更新と5秒間の表示
     pg.display.update()
     pg.time.wait(5000)  # 5秒間停止
+    
+def create_shield_item() -> pg.Rect:#課題5：追加実装機能-シールドアイテム
+    """
+    シールドアイテムのRectをランダムな位置に生成する。
+    """
+    shield_rct = pg.Rect(0, 0, 40, 40)  # シールドアイテムのサイズ
+    shield_rct.centerx = random.randint(40, WIDTH - 40)
+    shield_rct.centery = random.randint(40, HEIGHT - 40)
+    return shield_rct
+
+def check_shield_collision(kk_rct: pg.Rect, shield_rct: pg.Rect) -> bool:#課題5：シールド接触判定
+    """
+    こうかとんがシールドアイテムに接触したかを判定する。
+    """
+    return kk_rct.colliderect(shield_rct)
 
 
 def main():
@@ -112,6 +127,12 @@ def main():
     kk_imgs = kokaton_rotate(kk_img)  # 課題3:こうかとん画像を切り替えるための辞書を用意する関数
     kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
+    
+    #課題5： シールドアイテムの設定
+    shield_img = pg.transform.rotozoom(pg.image.load("fig/tate.png"), 0, 0.05)
+    shield_rct = create_shield_item()
+    shield_active = False  # シールドが有効か
+    shield_timer = 0  # シールドの残り時間
 
     # 課題2:爆弾の画像を段階ごとに作成（10段階）
     bb_accs = [1.0 + 0.5 * i for i in range(10)]  # 加速リスト
@@ -132,11 +153,23 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT: 
                 return
-        if kk_rct.colliderect(bb_rct):
+        if not shield_active and kk_rct.colliderect(bb_rct): #課題5：「シールドなし」かつ「ぶつかった」よ
             game_over(screen)
             return
+        
+        #課題5: シールドアイテムの取得処理
+        if check_shield_collision(kk_rct, shield_rct):
+            shield_active = True
+            shield_timer = 100  # シールドは300フレーム（約2秒間）有効
+            shield_rct = create_shield_item()  # 新しい位置にシールドを生成
 
-        # 課題2:爆弾の加速と拡大
+        #課題5: シールドタイマーの減少
+        if shield_active:
+            shield_timer -= 1
+            if shield_timer <= 0:
+                shield_active = False
+
+        #課題2:　爆弾の加速と拡大
         level = min(tmr // 500, 9)  # 500フレーム（10秒ごと）でレベルアップし、最大9まで
         vx = bb_accs[level] * (5 if vx > 0 else -5)  # 加速度に基づいて速度を更新
         vy = bb_accs[level] * (5 if vy > 0 else -5)
@@ -153,7 +186,17 @@ def main():
         kk_rct.move_ip(sum_mv)
         if check_bound(kk_rct) != (True, True):  # 画面外チェック
             kk_rct.move_ip(-sum_mv[0], -sum_mv[1])
-        screen.blit(kk_imgs[(sum_mv[0], sum_mv[1])], kk_rct)  # こうかとん描画
+            
+        #課題5: こうかとん描画とシールド取得時の連動    
+        screen.blit(bg_img, [0, 0])
+        if shield_active:
+            shielded_kk_img = pg.transform.rotozoom(pg.image.load("fig/muteki.png"), 0, 1.0)
+            screen.blit(shielded_kk_img, kk_rct)
+        else:
+            screen.blit(kk_imgs[(sum_mv[0], sum_mv[1])], kk_rct)
+
+        # シールドアイテムの描画
+        screen.blit(shield_img, shield_rct)  
 
         # 課題4：爆弾の速度ベクトルを更新
         vx, vy = calc_orientation(bb_rct, kk_rct, (vx, vy))
@@ -165,8 +208,6 @@ def main():
             vx *= -1
         if not tate:  # 縦にはみ出ている
             vy *= -1
-
-
         # 拡大された爆弾の描画
         screen.blit(bb_imgs[level], bb_rct)
 
