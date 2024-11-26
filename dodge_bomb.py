@@ -57,6 +57,7 @@ def main():
     bb_img = pg.Surface((20, 20))  # 爆弾用の空Surface
     pg.draw.circle(bb_img, (255, 0, 0), (10, 10), 10)  # 爆弾円を描く
     bb_img.set_colorkey((0, 0, 0))  # 四隅の黒を透過させる
+    bomb_boost = 1.5  # 課題2: 爆弾の加速度
     bb_rct = bb_img.get_rect()  # 爆弾Rectの抽出
     bb_rct.centerx = random.randint(0, WIDTH)
     bb_rct.centery = random.randint(0, HEIGHT)
@@ -70,6 +71,9 @@ def main():
         if kk_rct.colliderect(bb_rct):
             print("ゲームオーバー")
             return
+        if (tmr+1) % 250 == 0 and (tmr+1) // 250 <= 10:  #課題2：時間カウントが250ごとに(5秒ごとに)1加速、最大10回
+            vx *= bomb_boost
+            vy *= bomb_boost
         screen.blit(bg_img, [0, 0]) 
 
         key_lst = pg.key.get_pressed()
