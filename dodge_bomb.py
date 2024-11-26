@@ -54,16 +54,22 @@ def main():
     kk_imgs = kokaton_rotate(kk_img)  # 課題3:こうかとん画像を切り替えるための辞書を用意する関数
     kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
-    bb_img = pg.Surface((20, 20))  # 爆弾用の空Surface
-    pg.draw.circle(bb_img, (255, 0, 0), (10, 10), 10)  # 爆弾円を描く
-    bb_img.set_colorkey((0, 0, 0))  # 四隅の黒を透過させる
-    bomb_boost = 1.5  # 課題2: 爆弾の加速度
-    bb_rct = bb_img.get_rect()  # 爆弾Rectの抽出
+
+    # 課題2:爆弾の画像を段階ごとに作成（10段階）
+    bb_accs = [1.0 + 0.1 * i for i in range(10)]  # 加速リスト
+    bb_imgs = []  # サイズ段階ごとの爆弾画像リスト
+    for r in range(1, 11):  # 爆弾サイズを10段階に分ける
+        img = pg.Surface((20 * r, 20 * r), pg.SRCALPHA)  # SRCALPHAで透明背景
+        pg.draw.circle(img, (255, 0, 0), (10 * r, 10 * r), 10 * r)  # 円を描画
+        bb_imgs.append(img)
+
+    bb_rct = bb_imgs[0].get_rect()  # 爆弾Rectの抽出
     bb_rct.centerx = random.randint(0, WIDTH)
     bb_rct.centery = random.randint(0, HEIGHT)
     vx, vy = +5, +5  # 爆弾速度ベクトル
+
     clock = pg.time.Clock()
-    tmr = 0
+    tmr = 0  # タイマー
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT: 
@@ -71,32 +77,41 @@ def main():
         if kk_rct.colliderect(bb_rct):
             print("ゲームオーバー")
             return
-        if (tmr+1) % 250 == 0 and (tmr+1) // 250 <= 10:  #課題2：時間カウントが250ごとに(5秒ごとに)1加速、最大10回
-            vx *= bomb_boost
-            vy *= bomb_boost
-        screen.blit(bg_img, [0, 0]) 
 
+        # 課題2:爆弾の加速と拡大
+        level = min(tmr // 500, 9)  # 500フレーム（10秒ごと）でレベルアップし、最大9まで
+        vx = bb_accs[level] * (5 if vx > 0 else -5)  # 加速度に基づいて速度を更新
+        vy = bb_accs[level] * (5 if vy > 0 else -5)
+
+        screen.blit(bg_img, [0, 0])  # 背景描画
+
+        # こうかとんの操作
         key_lst = pg.key.get_pressed()
         sum_mv = [0, 0]
         for key, tpl in DELTA.items():
-            if key_lst[key] == True:
+            if key_lst[key]:
                 sum_mv[0] += tpl[0]
                 sum_mv[1] += tpl[1]
         kk_rct.move_ip(sum_mv)
-        # こうかとんが画面外なら，元の場所に戻す
-        if check_bound(kk_rct) != (True, True):
+        if check_bound(kk_rct) != (True, True):  # 画面外チェック
             kk_rct.move_ip(-sum_mv[0], -sum_mv[1])
-        screen.blit(kk_imgs[(sum_mv[0], sum_mv[1])], kk_rct)  # 課題3:kk_imgsがsum_mvにあうようにする
-        bb_rct.move_ip(vx, vy)  # 爆弾動く
+        screen.blit(kk_imgs[(sum_mv[0], sum_mv[1])], kk_rct)  # こうかとん描画
+
+        # 爆弾の動き
+        bb_rct.move_ip(vx, vy)
         yoko, tate = check_bound(bb_rct)
-        if not yoko:  # 横にはみ出てる
+        if not yoko:  # 横にはみ出ている
             vx *= -1
-        if not tate:  # 縦にはみ出てる
+        if not tate:  # 縦にはみ出ている
             vy *= -1
-        screen.blit(bb_img, bb_rct)
+
+        # 拡大された爆弾の描画
+        screen.blit(bb_imgs[level], bb_rct)
+
         pg.display.update()
         tmr += 1
         clock.tick(50)
+
 
 
 if __name__ == "__main__":
